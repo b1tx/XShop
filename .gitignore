@@ -1,0 +1,25 @@
+.idea/
+.vscode/
+*.iml
+
+# Java / Maven
+backend/target/
+*.class
+
+# Node / Vue
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/tsconfig.tsbuildinfo
+
+# Logs and local config
+*.log
+*.tmp
+.env
+.env.*
+!frontend/.env.example
+!backend/src/main/resources/application.yml
+
+# OS files
+Thumbs.db
+.DS_Store

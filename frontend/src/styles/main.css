@@ -1,0 +1,198 @@
+:root {
+  font-family: Inter, "Microsoft YaHei", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #18212f;
+  background: #f5f7f8;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.store-shell,
+.admin-shell {
+  min-height: 100vh;
+}
+
+.store-shell {
+  padding: 32px;
+}
+
+.store-header,
+.admin-header,
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.store-header h1,
+.admin-header h2 {
+  margin: 0;
+  font-size: 34px;
+  letter-spacing: 0;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #5f6f7e;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.store-nav {
+  display: flex;
+  gap: 18px;
+  color: #435163;
+  font-weight: 600;
+}
+
+.store-workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.catalog-panel,
+.assistant-panel,
+.table-panel,
+.metric {
+  background: #ffffff;
+  border: 1px solid #dde4ea;
+  border-radius: 8px;
+}
+
+.catalog-panel,
+.assistant-panel,
+.table-panel {
+  padding: 24px;
+}
+
+.product-grid {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.product-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  border-bottom: 1px solid #edf1f4;
+}
+
+.product-row:last-child {
+  border-bottom: 0;
+}
+
+.product-row h2,
+.assistant-panel h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.product-row p {
+  margin: 0;
+  color: #607080;
+}
+
+.assistant-panel {
+  display: grid;
+  align-content: start;
+  gap: 18px;
+}
+
+.admin-shell {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+}
+
+.sidebar {
+  padding: 28px 20px;
+  background: #111827;
+  color: #e5e7eb;
+}
+
+.sidebar h1 {
+  margin: 0 0 32px;
+  font-size: 22px;
+  letter-spacing: 0;
+}
+
+.sidebar a {
+  display: block;
+  padding: 12px 14px;
+  border-radius: 8px;
+  color: #cbd5e1;
+}
+
+.sidebar a.active {
+  background: #ffffff;
+  color: #111827;
+}
+
+.admin-content {
+  padding: 32px;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 28px 0;
+}
+
+.metric {
+  padding: 20px;
+}
+
+.metric span {
+  display: block;
+  color: #607080;
+  font-size: 14px;
+}
+
+.metric strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 28px;
+}
+
+@media (max-width: 900px) {
+  .store-workspace,
+  .admin-shell,
+  .metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .store-header,
+  .admin-header,
+  .section-title {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .store-shell,
+  .admin-content {
+    padding: 20px;
+  }
+}
+
