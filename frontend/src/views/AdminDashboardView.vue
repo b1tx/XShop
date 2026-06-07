@@ -2,11 +2,12 @@
   <main class="admin-shell">
     <aside class="sidebar">
       <h1>AI 电商后台</h1>
-      <a class="active">销售看板</a>
-      <a>商品管理</a>
+      <RouterLink class="active" to="/admin">销售看板</RouterLink>
+      <RouterLink to="/admin/products">商品管理</RouterLink>
       <a>订单管理</a>
       <a>促销管理</a>
-      <a>AI 运营助手</a>
+      <RouterLink to="/admin/users">用户管理</RouterLink>
+      <RouterLink to="/">返回店铺</RouterLink>
     </aside>
 
     <section class="admin-content">
@@ -54,4 +55,3 @@ const lowStockProducts = [
   { name: '人体工学办公椅', stock: 4, status: '需补货' }
 ]
 </script>
-

@@ -9,7 +9,9 @@ CREATE TABLE IF NOT EXISTS sys_user (
     phone VARCHAR(20),
     status TINYINT NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_sys_user_status (status),
+    KEY idx_sys_user_created_at (created_at)
 );
 
 CREATE TABLE IF NOT EXISTS sys_role (
@@ -22,7 +24,8 @@ CREATE TABLE IF NOT EXISTS sys_role (
 CREATE TABLE IF NOT EXISTS sys_user_role (
     user_id BIGINT NOT NULL,
     role_id BIGINT NOT NULL,
-    PRIMARY KEY (user_id, role_id)
+    PRIMARY KEY (user_id, role_id),
+    KEY idx_sys_user_role_role_id (role_id)
 );
 
 CREATE TABLE IF NOT EXISTS product_category (
@@ -31,7 +34,8 @@ CREATE TABLE IF NOT EXISTS product_category (
     name VARCHAR(80) NOT NULL,
     sort INT NOT NULL DEFAULT 0,
     status TINYINT NOT NULL DEFAULT 1,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_product_category_status_sort (status, sort)
 );
 
 CREATE TABLE IF NOT EXISTS product (
@@ -45,7 +49,10 @@ CREATE TABLE IF NOT EXISTS product (
     detail TEXT,
     status TINYINT NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    KEY idx_product_category_status (category_id, status),
+    KEY idx_product_created_at (created_at),
+    KEY idx_product_name (name)
 );
 
 CREATE TABLE IF NOT EXISTS product_image (
@@ -146,4 +153,3 @@ CREATE TABLE IF NOT EXISTS operation_log (
     detail VARCHAR(500),
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-

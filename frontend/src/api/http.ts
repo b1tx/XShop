@@ -14,7 +14,32 @@ http.interceptors.request.use((config) => {
 })
 
 http.interceptors.response.use(
-  (response) => response.data,
-  (error) => Promise.reject(error)
+  (response) => {
+    const payload = response.data
+    if (payload && typeof payload.code === 'number') {
+      if (payload.code === 0) {
+        return payload.data
+      }
+      return Promise.reject(new Error(payload.message || '请求失败'))
+    }
+    return payload
+  },
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login'
+      }
+    }
+    return Promise.reject(error)
+  }
 )
+
+export interface PageResult<T> {
+  records: T[]
+  total: number
+  page: number
+  size: number
+}
 
