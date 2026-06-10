@@ -4,6 +4,7 @@
       <h1>AI 电商后台</h1>
       <RouterLink to="/admin">销售看板</RouterLink>
       <RouterLink to="/admin/products">商品管理</RouterLink>
+      <RouterLink to="/admin/orders">订单管理</RouterLink>
       <RouterLink class="active" to="/admin/users">用户管理</RouterLink>
       <RouterLink to="/">返回店铺</RouterLink>
     </aside>
@@ -70,6 +71,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { getAdminUsers, updateAdminUserRoles, updateAdminUserStatus, type AdminUser } from '../api/admin'
+import type { EntityId } from '../types/product'
 
 const users = ref<AdminUser[]>([])
 const total = ref(0)
@@ -85,13 +87,13 @@ async function loadUsers() {
   total.value = page.total
 }
 
-async function saveStatus(id: number, status: number) {
+async function saveStatus(id: EntityId, status: number) {
   await updateAdminUserStatus(id, status)
   ElMessage.success('状态已更新')
   await loadUsers()
 }
 
-async function saveRoles(id: number, roles: string[]) {
+async function saveRoles(id: EntityId, roles: string[]) {
   await updateAdminUserRoles(id, roles)
   ElMessage.success('角色已更新')
   await loadUsers()
@@ -104,4 +106,3 @@ function handlePageChange(page: number) {
 
 onMounted(loadUsers)
 </script>
-

@@ -25,7 +25,8 @@
         </nav>
         <div class="gothic-actions">
           <RouterLink to="/">首页</RouterLink>
-          <RouterLink to="/login">登录</RouterLink>
+          <RouterLink to="/cart">购物车</RouterLink>
+          <RouterLink to="/orders">订单</RouterLink>
         </div>
       </div>
     </header>
@@ -64,7 +65,7 @@
               <h3>{{ product.name }}</h3>
             </RouterLink>
             <p>{{ product.subtitle }}</p>
-            <button type="button">加入购物车</button>
+            <button type="button" :disabled="product.stock <= 0" @click="addToCart(product)">加入购物车</button>
           </div>
         </article>
       </div>
@@ -83,12 +84,18 @@
 
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { addCartItem } from '../api/cart'
 import { getCategories, getProducts } from '../api/products'
-import type { Category, Product } from '../types/product'
+import { useAuthStore } from '../stores/auth'
+import type { Category, EntityId, Product } from '../types/product'
 
 type ViewMode = 'compact' | 'comfortable' | 'large'
 
 const viewMode = ref<ViewMode>('comfortable')
+const router = useRouter()
+const authStore = useAuthStore()
 const products = ref<Product[]>([])
 const total = ref(0)
 const categoryOptions = ref<Array<Pick<Category, 'id' | 'name'>>>([{ id: 0, name: '全部' }])
@@ -96,7 +103,7 @@ const query = reactive({
   page: 1,
   size: 8,
   keyword: '',
-  categoryId: null as number | null
+  categoryId: null as EntityId | null
 })
 
 async function loadProducts() {
@@ -105,7 +112,7 @@ async function loadProducts() {
   total.value = page.total
 }
 
-function switchCategory(id: number) {
+function switchCategory(id: EntityId) {
   query.categoryId = id === 0 ? null : id
   query.page = 1
   loadProducts()
@@ -116,10 +123,19 @@ function handlePageChange(page: number) {
   loadProducts()
 }
 
+async function addToCart(product: Product) {
+  if (!authStore.isLoggedIn) {
+    ElMessage.warning('请先登录后加入购物车')
+    router.push({ path: '/login', query: { redirect: '/products' } })
+    return
+  }
+  await addCartItem({ productId: product.id, quantity: 1 })
+  ElMessage.success('已加入购物车')
+}
+
 onMounted(async () => {
   const categories = await getCategories()
   categoryOptions.value = [{ id: 0, name: '全部' }, ...categories.map((category) => ({ id: category.id, name: category.name }))]
   await loadProducts()
 })
 </script>
-

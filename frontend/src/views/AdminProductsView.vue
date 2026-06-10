@@ -4,6 +4,7 @@
       <h1>AI 电商后台</h1>
       <RouterLink to="/admin">销售看板</RouterLink>
       <RouterLink class="active" to="/admin/products">商品管理</RouterLink>
+      <RouterLink to="/admin/orders">订单管理</RouterLink>
       <RouterLink to="/admin/users">用户管理</RouterLink>
       <RouterLink to="/">返回店铺</RouterLink>
     </aside>
@@ -137,7 +138,7 @@ import {
   updateAdminProduct,
   updateAdminProductStatus
 } from '../api/admin'
-import type { Category, Product, ProductPayload } from '../types/product'
+import type { Category, EntityId, Product, ProductPayload } from '../types/product'
 
 const products = ref<Product[]>([])
 const categories = ref<Category[]>([])
@@ -150,7 +151,7 @@ const query = reactive({
   page: 1,
   size: 10,
   keyword: '',
-  categoryId: null as number | null,
+  categoryId: null as EntityId | null,
   status: null as number | null
 })
 
@@ -228,7 +229,7 @@ async function toggleStatus(product: Product) {
   await loadProducts()
 }
 
-async function removeProduct(id: number) {
+async function removeProduct(id: EntityId) {
   await ElMessageBox.confirm('确认删除该商品？', '删除商品')
   await deleteAdminProduct(id)
   ElMessage.success('删除成功')
@@ -254,4 +255,3 @@ onMounted(async () => {
   await loadProducts()
 })
 </script>
-

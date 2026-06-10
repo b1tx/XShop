@@ -53,7 +53,7 @@
 
         <div class="gothic-actions">
           <RouterLink to="/admin">后台</RouterLink>
-          <button type="button">
+          <button type="button" @click="goCart">
             <el-icon><ShoppingCart /></el-icon>
             购物车
           </button>
@@ -135,7 +135,7 @@
               <span>已售 {{ productSales(product) }}</span>
               <span :class="{ warning: product.stock <= 10 }">库存 {{ product.stock }}</span>
             </div>
-            <button type="button">加入购物车</button>
+            <button type="button" :disabled="product.stock <= 0" @click="addToCart(product)">加入购物车</button>
           </div>
         </article>
       </div>
@@ -184,10 +184,13 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { MagicStick, Search, ShoppingCart } from '@element-plus/icons-vue'
+import { addCartItem } from '../api/cart'
 import { getCategories, getProducts } from '../api/products'
 import { useAuthStore } from '../stores/auth'
-import type { Category, Product } from '../types/product'
+import type { Category, EntityId, Product } from '../types/product'
 
 type ViewMode = 'compact' | 'comfortable' | 'large'
 type SortMode = '推荐' | '销量' | '价格'
@@ -209,13 +212,14 @@ interface StoreProduct extends Product {
 
 const searchKeyword = ref('')
 const authStore = useAuthStore()
-const activeCategoryId = ref<number | null>(null)
+const router = useRouter()
+const activeCategoryId = ref<EntityId | null>(null)
 const sortMode = ref<SortMode>('推荐')
 const viewMode = ref<ViewMode>('comfortable')
 const inStockOnly = ref(false)
 const aiDialogVisible = ref(false)
 const question = ref('')
-const imageErrors = ref(new Set<number>())
+const imageErrors = ref(new Set<EntityId>())
 
 const categories = ref<Array<Pick<Category, 'id' | 'name'>>>([
   { id: 0, name: '全部' },
@@ -399,7 +403,7 @@ const displayedProducts = computed(() => {
   return [...result].sort((a, b) => {
     if (sortMode.value === '价格') return a.price - b.price
     if (sortMode.value === '销量') return (b.salesCount || 0) - (a.salesCount || 0)
-    return (b.priority || b.id) - (a.priority || a.id)
+    return (b.priority || Number(b.id) || 0) - (a.priority || Number(a.id) || 0)
   })
 })
 
@@ -418,7 +422,7 @@ const roleLabel = computed(() => {
   return '未分配角色'
 })
 
-function markImageError(productId: number) {
+function markImageError(productId: EntityId) {
   imageErrors.value = new Set([...imageErrors.value, productId])
 }
 
@@ -426,7 +430,21 @@ function handleLogout() {
   authStore.clearSession()
 }
 
-function switchCategory(categoryId: number) {
+function goCart() {
+  router.push('/cart')
+}
+
+async function addToCart(product: StoreProduct) {
+  if (!authStore.isLoggedIn) {
+    ElMessage.warning('请先登录后加入购物车')
+    router.push({ path: '/login', query: { redirect: '/' } })
+    return
+  }
+  await addCartItem({ productId: product.id, quantity: 1 })
+  ElMessage.success('已加入购物车')
+}
+
+function switchCategory(categoryId: EntityId) {
   activeCategoryId.value = categoryId === 0 ? null : categoryId
 }
 
@@ -435,7 +453,7 @@ function productBadge(product: StoreProduct) {
 }
 
 function productSales(product: StoreProduct) {
-  return product.sales || `${Math.max(80, product.id % 9000)}+`
+  return product.sales || `${Math.max(80, Number(product.id) % 9000 || 0)}+`
 }
 
 function productRating(product: StoreProduct) {

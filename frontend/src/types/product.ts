@@ -1,14 +1,16 @@
+export type EntityId = string | number
+
 export interface Category {
-  id: number
-  parentId: number
+  id: EntityId
+  parentId: EntityId
   name: string
   sort: number
   status: number
 }
 
 export interface Product {
-  id: number
-  categoryId: number
+  id: EntityId
+  categoryId: EntityId
   categoryName: string
   name: string
   subtitle: string
@@ -22,7 +24,7 @@ export interface Product {
 }
 
 export interface ProductPayload {
-  categoryId: number
+  categoryId: EntityId
   name: string
   subtitle: string
   price: number
@@ -31,4 +33,3 @@ export interface ProductPayload {
   detail: string
   status: number
 }
-

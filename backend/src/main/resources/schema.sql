@@ -69,7 +69,9 @@ CREATE TABLE IF NOT EXISTS cart_item (
     quantity INT NOT NULL,
     selected TINYINT NOT NULL DEFAULT 1,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_cart_user_product (user_id, product_id),
+    KEY idx_cart_item_user_id (user_id)
 );
 
 CREATE TABLE IF NOT EXISTS order_main (
@@ -82,7 +84,9 @@ CREATE TABLE IF NOT EXISTS order_main (
     receiver_phone VARCHAR(20) NOT NULL,
     receiver_address VARCHAR(255) NOT NULL,
     created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    paid_at DATETIME NULL
+    paid_at DATETIME NULL,
+    KEY idx_order_main_user_created (user_id, created_at),
+    KEY idx_order_main_status_created (status, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS order_item (
@@ -93,7 +97,9 @@ CREATE TABLE IF NOT EXISTS order_item (
     product_image VARCHAR(255),
     price DECIMAL(10, 2) NOT NULL,
     quantity INT NOT NULL,
-    total_amount DECIMAL(10, 2) NOT NULL
+    total_amount DECIMAL(10, 2) NOT NULL,
+    KEY idx_order_item_order_id (order_id),
+    KEY idx_order_item_product_id (product_id)
 );
 
 CREATE TABLE IF NOT EXISTS payment_record (
@@ -103,7 +109,8 @@ CREATE TABLE IF NOT EXISTS payment_record (
     amount DECIMAL(10, 2) NOT NULL,
     status VARCHAR(30) NOT NULL,
     paid_at DATETIME NULL,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_payment_record_order_id (order_id)
 );
 
 CREATE TABLE IF NOT EXISTS inventory_record (
@@ -114,7 +121,9 @@ CREATE TABLE IF NOT EXISTS inventory_record (
     after_stock INT NOT NULL,
     business_type VARCHAR(30) NOT NULL,
     business_id BIGINT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_inventory_record_product_created (product_id, created_at),
+    KEY idx_inventory_record_business (business_type, business_id)
 );
 
 CREATE TABLE IF NOT EXISTS promotion_activity (

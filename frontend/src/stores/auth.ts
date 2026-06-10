@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
+import type { EntityId } from '../types/product'
 
 interface UserProfile {
-  id: number
+  id: EntityId
   username: string
   nickname: string
   phone?: string

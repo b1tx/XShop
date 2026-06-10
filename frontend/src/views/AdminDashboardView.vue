@@ -4,7 +4,7 @@
       <h1>AI 电商后台</h1>
       <RouterLink class="active" to="/admin">销售看板</RouterLink>
       <RouterLink to="/admin/products">商品管理</RouterLink>
-      <a>订单管理</a>
+      <RouterLink to="/admin/orders">订单管理</RouterLink>
       <a>促销管理</a>
       <RouterLink to="/admin/users">用户管理</RouterLink>
       <RouterLink to="/">返回店铺</RouterLink>
