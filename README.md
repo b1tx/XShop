@@ -35,6 +35,9 @@ XShop 是一个基于 Spring Boot + Vue3 的 B2C 网上店铺项目。当前版�
 - 订单中心：创建订单、模拟支付、取消订单、确认收货
 - 库存一致性：下单扣减库存、取消订单回滚库存、记录库存流水
 - 后台订单管理：查询、筛选、查看详情、发货、取消
+- 限时抢购：活动展示、活动价、Redis 活动库存、抢购下单
+- AI 导购与商品问答：前台导购建议、商品详情问答、AI 调用记录
+- AI 运营助手：后台商品文案生成、运营分析
 - 后台看板入口保留
 
 ## 角色职能
@@ -70,6 +73,13 @@ UPDATE sys_user SET status = 1 WHERE username = 'admin';
 ```bash
 mysql -uroot -p --default-character-set=utf8mb4 < backend/src/main/resources/schema.sql
 mysql -uroot -p --default-character-set=utf8mb4 ai_commerce < backend/src/main/resources/data.sql
+```
+
+如果是在旧数据库上增量升级本阶段功能，需补充抢购订单字段：
+
+```sql
+ALTER TABLE order_item ADD COLUMN promotion_product_id BIGINT NULL AFTER product_image;
+ALTER TABLE order_item ADD KEY idx_order_item_promotion_product_id (promotion_product_id);
 ```
 
 后端默认连接：
@@ -125,6 +135,8 @@ npm run build
 - `/admin`：后台看板
 - `/admin/products`：后台商品管理
 - `/admin/orders`：后台订单管理
+- `/admin/promotions`：后台促销管理
+- `/admin/ai-operation`：AI 运营助手
 - `/admin/users`：后台用户管理
 
 ## 接口概览
@@ -172,8 +184,22 @@ npm run build
 - `POST /api/orders/{id}/cancel`：取消订单
 - `POST /api/orders/{id}/receive`：确认收货
 
+### 促销与 AI
+
+- `GET /api/promotions/active`：当前有效促销活动
+- `GET /api/promotions/{id}`：促销活动详情
+- `POST /api/promotions/{id}/orders`：创建抢购订单
+- `GET /api/admin/promotions`：后台促销活动列表
+- `POST /api/admin/promotions`：新增促销活动
+- `PUT /api/admin/promotions/{id}`：编辑促销活动
+- `PUT /api/admin/promotions/{id}/status`：启用或停用促销活动
+- `POST /api/ai/shopping-guide`：AI 导购
+- `POST /api/ai/product-qa`：AI 商品问答
+- `POST /api/ai/product-copywriting`：AI 商品文案
+- `POST /api/ai/operation-analysis`：AI 运营分析
+
 ## 当前阶段说明
 
-当前已完成 2026-06-10 至 2026-06-13 阶段的核心开发内容。促销秒杀、真实 AI 接口和销售看板增强尚未实现，属于后续阶段。
+当前已完成 2026-06-14 至 2026-06-16 阶段的核心开发内容。销售看板增强、ECharts 图表和演示截图属于后续阶段。
 
 商品图片当前使用远程公开图片 URL，暂未实现本地图片上传。

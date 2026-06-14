@@ -24,6 +24,7 @@ import com.example.aicommerce.product.service.ProductService;
 import com.example.aicommerce.security.CurrentUserHolder;
 import com.example.aicommerce.user.entity.SysUser;
 import com.example.aicommerce.user.service.UserService;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -50,6 +51,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMainMapper, OrderMain> im
     private final PaymentRecordMapper paymentRecordMapper;
     private final InventoryRecordMapper inventoryRecordMapper;
     private final UserService userService;
+    private final StringRedisTemplate redisTemplate;
 
     public OrderServiceImpl(CartService cartService,
                             ProductService productService,
@@ -57,7 +59,8 @@ public class OrderServiceImpl extends ServiceImpl<OrderMainMapper, OrderMain> im
                             OrderItemMapper orderItemMapper,
                             PaymentRecordMapper paymentRecordMapper,
                             InventoryRecordMapper inventoryRecordMapper,
-                            UserService userService) {
+                            UserService userService,
+                            StringRedisTemplate redisTemplate) {
         this.cartService = cartService;
         this.productService = productService;
         this.productMapper = productMapper;
@@ -65,6 +68,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMainMapper, OrderMain> im
         this.paymentRecordMapper = paymentRecordMapper;
         this.inventoryRecordMapper = inventoryRecordMapper;
         this.userService = userService;
+        this.redisTemplate = redisTemplate;
     }
 
     @Override
@@ -132,6 +136,63 @@ public class OrderServiceImpl extends ServiceImpl<OrderMainMapper, OrderMain> im
         updateById(order);
         cartService.removeByIds(request.getCartItemIds());
         return toResponse(order, orderItems, true);
+    }
+
+    @Override
+    @Transactional
+    public OrderResponse createDirectOrder(Long productId,
+                                           Integer quantity,
+                                           BigDecimal price,
+                                           Long promotionProductId,
+                                           String receiverName,
+                                           String receiverPhone,
+                                           String receiverAddress,
+                                           String businessType) {
+        Long userId = CurrentUserHolder.getRequiredUser().getId();
+        if (quantity == null || quantity < 1) {
+            throw new BusinessException("Invalid quantity");
+        }
+        Product product = productService.getById(productId);
+        if (product == null || product.getStatus() == null || product.getStatus() != 1) {
+            throw new BusinessException("Product is unavailable");
+        }
+        BigDecimal orderPrice = price == null ? product.getPrice() : price;
+        int beforeStock = product.getStock() == null ? 0 : product.getStock();
+        if (beforeStock < quantity) {
+            throw new BusinessException("Insufficient stock: " + product.getName());
+        }
+        int updated = productMapper.deductStock(product.getId(), quantity);
+        if (updated != 1) {
+            throw new BusinessException("Insufficient stock: " + product.getName());
+        }
+
+        OrderMain order = new OrderMain();
+        order.setOrderNo(generateOrderNo());
+        order.setUserId(userId);
+        order.setStatus(CREATED);
+        order.setReceiverName(receiverName);
+        order.setReceiverPhone(receiverPhone);
+        order.setReceiverAddress(receiverAddress);
+        order.setTotalAmount(orderPrice.multiply(BigDecimal.valueOf(quantity)));
+        save(order);
+
+        OrderItem orderItem = new OrderItem();
+        orderItem.setOrderId(order.getId());
+        orderItem.setProductId(product.getId());
+        orderItem.setPromotionProductId(promotionProductId);
+        orderItem.setProductName(product.getName());
+        orderItem.setProductImage(product.getMainImage());
+        orderItem.setPrice(orderPrice);
+        orderItem.setQuantity(quantity);
+        orderItem.setTotalAmount(order.getTotalAmount());
+        orderItemMapper.insert(orderItem);
+
+        writeInventory(product.getId(), -quantity, beforeStock, beforeStock - quantity,
+                StringUtils.hasText(businessType) ? businessType : "DIRECT_ORDER", order.getId());
+
+        List<OrderItem> items = new ArrayList<OrderItem>();
+        items.add(orderItem);
+        return toResponse(order, items, false);
     }
 
     @Override
@@ -243,6 +304,9 @@ public class OrderServiceImpl extends ServiceImpl<OrderMainMapper, OrderMain> im
             Product product = productService.getById(item.getProductId());
             int beforeStock = product == null || product.getStock() == null ? 0 : product.getStock();
             productMapper.restoreStock(item.getProductId(), item.getQuantity());
+            if (item.getPromotionProductId() != null) {
+                redisTemplate.opsForValue().increment("promotion:stock:" + item.getPromotionProductId(), item.getQuantity());
+            }
             writeInventory(item.getProductId(), item.getQuantity(), beforeStock, beforeStock + item.getQuantity(), "ORDER_CANCEL", order.getId());
         }
         order.setStatus(CANCELLED);
@@ -304,6 +368,7 @@ public class OrderServiceImpl extends ServiceImpl<OrderMainMapper, OrderMain> im
             OrderItemResponse itemResponse = new OrderItemResponse();
             itemResponse.setId(item.getId());
             itemResponse.setProductId(item.getProductId());
+            itemResponse.setPromotionProductId(item.getPromotionProductId());
             itemResponse.setProductName(item.getProductName());
             itemResponse.setProductImage(item.getProductImage());
             itemResponse.setPrice(item.getPrice());

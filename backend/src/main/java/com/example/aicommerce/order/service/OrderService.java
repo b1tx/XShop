@@ -6,8 +6,19 @@ import com.example.aicommerce.order.dto.CreateOrderRequest;
 import com.example.aicommerce.order.dto.OrderResponse;
 import com.example.aicommerce.order.entity.OrderMain;
 
+import java.math.BigDecimal;
+
 public interface OrderService extends IService<OrderMain> {
     OrderResponse createOrder(CreateOrderRequest request);
+
+    OrderResponse createDirectOrder(Long productId,
+                                    Integer quantity,
+                                    BigDecimal price,
+                                    Long promotionProductId,
+                                    String receiverName,
+                                    String receiverPhone,
+                                    String receiverAddress,
+                                    String businessType);
 
     PageResult<OrderResponse> pageCurrentUserOrders(long page, long size, String status);
 

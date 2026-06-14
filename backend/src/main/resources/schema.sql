@@ -95,11 +95,13 @@ CREATE TABLE IF NOT EXISTS order_item (
     product_id BIGINT NOT NULL,
     product_name VARCHAR(100) NOT NULL,
     product_image VARCHAR(255),
+    promotion_product_id BIGINT NULL,
     price DECIMAL(10, 2) NOT NULL,
     quantity INT NOT NULL,
     total_amount DECIMAL(10, 2) NOT NULL,
     KEY idx_order_item_order_id (order_id),
-    KEY idx_order_item_product_id (product_id)
+    KEY idx_order_item_product_id (product_id),
+    KEY idx_order_item_promotion_product_id (promotion_product_id)
 );
 
 CREATE TABLE IF NOT EXISTS payment_record (
@@ -132,7 +134,9 @@ CREATE TABLE IF NOT EXISTS promotion_activity (
     start_time DATETIME NOT NULL,
     end_time DATETIME NOT NULL,
     status TINYINT NOT NULL DEFAULT 0,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_promotion_activity_status_time (status, start_time, end_time),
+    KEY idx_promotion_activity_created_at (created_at)
 );
 
 CREATE TABLE IF NOT EXISTS promotion_product (
@@ -141,7 +145,9 @@ CREATE TABLE IF NOT EXISTS promotion_product (
     product_id BIGINT NOT NULL,
     promotion_price DECIMAL(10, 2) NOT NULL,
     promotion_stock INT NOT NULL,
-    limit_per_user INT NOT NULL DEFAULT 1
+    limit_per_user INT NOT NULL DEFAULT 1,
+    KEY idx_promotion_product_activity (activity_id),
+    KEY idx_promotion_product_product (product_id)
 );
 
 CREATE TABLE IF NOT EXISTS ai_chat_record (
@@ -151,7 +157,9 @@ CREATE TABLE IF NOT EXISTS ai_chat_record (
     prompt TEXT NOT NULL,
     response TEXT NOT NULL,
     model VARCHAR(100),
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    KEY idx_ai_chat_record_user_created (user_id, created_at),
+    KEY idx_ai_chat_record_scene_created (scene, created_at)
 );
 
 CREATE TABLE IF NOT EXISTS operation_log (

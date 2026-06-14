@@ -37,6 +37,29 @@
             加入购物车
           </el-button>
         </div>
+
+        <section class="product-ai-panel">
+          <div>
+            <p class="eyebrow">Product Q&A</p>
+            <h2>AI 商品问答</h2>
+            <span>围绕场景、材质、搭配或使用方式提问。</span>
+          </div>
+          <div class="product-ai-panel__ask">
+            <el-input
+              v-model="aiQuestion"
+              type="textarea"
+              :rows="3"
+              placeholder="例如：这件商品适合什么场景？材质和搭配有什么建议？"
+            />
+            <el-button type="primary" :loading="aiLoading" @click="askProduct">
+              询问 AI
+            </el-button>
+          </div>
+          <div v-if="aiAnswer" class="ai-result-panel product-ai-answer">
+            <strong>AI 回答</strong>
+            <span>{{ aiAnswer }}</span>
+          </div>
+        </section>
       </div>
     </section>
   </main>
@@ -46,6 +69,7 @@
 import { onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { productQa } from '../api/ai'
 import { addCartItem } from '../api/cart'
 import { getProductDetail } from '../api/products'
 import { useAuthStore } from '../stores/auth'
@@ -56,6 +80,9 @@ const router = useRouter()
 const authStore = useAuthStore()
 const product = ref<Product | null>(null)
 const quantity = ref(1)
+const aiQuestion = ref('')
+const aiAnswer = ref('')
+const aiLoading = ref(false)
 
 async function addToCart() {
   if (!product.value) return
@@ -66,6 +93,23 @@ async function addToCart() {
   }
   await addCartItem({ productId: product.value.id, quantity: quantity.value })
   ElMessage.success('已加入购物车')
+}
+
+async function askProduct() {
+  if (!product.value) return
+  if (!aiQuestion.value.trim()) {
+    ElMessage.warning('请输入你的问题')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const result = await productQa(product.value.id, aiQuestion.value.trim())
+    aiAnswer.value = result.content
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'AI 问答暂不可用')
+  } finally {
+    aiLoading.value = false
+  }
 }
 
 onMounted(async () => {

@@ -13,6 +13,7 @@ public class OrderItem {
     private Long id;
     private Long orderId;
     private Long productId;
+    private Long promotionProductId;
     private String productName;
     private String productImage;
     private BigDecimal price;

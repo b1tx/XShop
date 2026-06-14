@@ -82,6 +82,45 @@
     </section>
 
     <section class="store-container product-section gothic-products">
+      <div v-if="activePromotion && activePromotion.products.length" class="promotion-strip">
+        <div class="promotion-strip__head">
+          <div>
+            <p class="eyebrow">限时抢购</p>
+            <h2>{{ activePromotion.name }}</h2>
+            <small>精选暗夜单品限量放出，活动库存售完即止。</small>
+          </div>
+          <span>截止 {{ formatDateTime(activePromotion.endTime) }}</span>
+        </div>
+        <div class="promotion-grid">
+          <article v-for="item in activePromotion.products" :key="item.id" class="promotion-card">
+            <RouterLink class="promotion-card__media" :to="`/products/${item.productId}`">
+              <img :src="item.mainImage" :alt="item.productName" />
+            </RouterLink>
+            <div class="promotion-card__content">
+              <RouterLink :to="`/products/${item.productId}`">
+                <h3>{{ item.productName }}</h3>
+              </RouterLink>
+              <p>{{ item.subtitle }}</p>
+              <div class="promotion-price">
+                <strong>¥{{ item.promotionPrice }}</strong>
+                <span>原价 ¥{{ item.originalPrice }}</span>
+              </div>
+              <div class="promotion-stock">
+                <span>剩余 {{ item.remainingStock }} 件</span>
+                <span>限购 {{ item.limitPerUser }} 件</span>
+              </div>
+              <el-button
+                type="primary"
+                :disabled="item.remainingStock <= 0"
+                @click="openPromotionCheckout(item)"
+              >
+                立即抢购
+              </el-button>
+            </div>
+          </article>
+        </div>
+      </div>
+
       <div class="product-toolbar">
         <div>
           <p class="eyebrow">Curated Goods</p>
@@ -152,31 +191,83 @@
 
     <el-dialog
       v-model="aiDialogVisible"
-      class="ai-guide-dialog"
+      class="gothic-dialog ai-guide-dialog"
       width="min(520px, calc(100vw - 32px))"
-      title="夜幕 AI 导购"
       append-to-body
       destroy-on-close
     >
+      <template #header>
+        <div class="gothic-dialog__intro">
+          <p class="eyebrow">AI Guide</p>
+          <h2>AI 导购</h2>
+          <span>描述预算、场景和偏好，获取当前店铺商品搭配建议。</span>
+        </div>
+      </template>
       <div class="ai-dialog-body">
-        <p>告诉我你的预算、场景和偏好，我会从当前商品中给出搭配建议。</p>
         <el-input
           v-model="question"
           type="textarea"
           :rows="5"
           placeholder="例如：我想要一套适合晚宴的黑色配饰，预算 800 元"
         />
-        <div class="ai-suggestion">
-          <strong>示例建议</strong>
-          <span>{{ aiPreview }}</span>
+        <div class="ai-result-panel ai-suggestion">
+          <strong>{{ aiAnswer ? 'AI 建议' : '示例建议' }}</strong>
+          <span>{{ aiAnswer || aiPreview }}</span>
         </div>
       </div>
       <template #footer>
         <el-button @click="aiDialogVisible = false">关闭</el-button>
-        <el-button type="primary">
+        <el-button type="primary" :loading="aiLoading" @click="submitAiGuide">
           <el-icon><MagicStick /></el-icon>
           生成建议
         </el-button>
+      </template>
+    </el-dialog>
+
+    <el-dialog
+      v-model="promotionCheckoutVisible"
+      class="gothic-dialog"
+      width="min(560px, calc(100vw - 32px))"
+      append-to-body
+    >
+      <template #header>
+        <div class="gothic-dialog__intro">
+          <p class="eyebrow">Flash Checkout</p>
+          <h2>确认抢购订单</h2>
+          <span>活动库存有限，提交后将为你锁定订单。</span>
+        </div>
+      </template>
+
+      <div v-if="selectedPromotionProduct" class="gothic-dialog__summary">
+        <img :src="selectedPromotionProduct.mainImage" :alt="selectedPromotionProduct.productName" />
+        <div>
+          <strong>{{ selectedPromotionProduct.productName }}</strong>
+          <span>活动价 ¥{{ selectedPromotionProduct.promotionPrice }} · 剩余 {{ selectedPromotionProduct.remainingStock }} 件</span>
+          <em>预计 ¥{{ formatMoney(promotionTotalAmount) }}</em>
+        </div>
+      </div>
+
+      <el-form class="gothic-form-grid" :model="promotionForm" label-position="top">
+        <el-form-item label="数量">
+          <el-input-number
+            v-model="promotionForm.quantity"
+            :min="1"
+            :max="promotionQuantityMax"
+          />
+        </el-form-item>
+        <el-form-item label="收货人">
+          <el-input v-model="promotionForm.receiverName" />
+        </el-form-item>
+        <el-form-item label="电话">
+          <el-input v-model="promotionForm.receiverPhone" />
+        </el-form-item>
+        <el-form-item label="地址">
+          <el-input v-model="promotionForm.receiverAddress" type="textarea" :rows="3" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="promotionCheckoutVisible = false">取消</el-button>
+        <el-button type="primary" :loading="promotionSubmitting" @click="submitPromotionOrder">提交抢购订单</el-button>
       </template>
     </el-dialog>
   </main>
@@ -187,10 +278,13 @@ import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { MagicStick, Search, ShoppingCart } from '@element-plus/icons-vue'
+import { shoppingGuide } from '../api/ai'
 import { addCartItem } from '../api/cart'
 import { getCategories, getProducts } from '../api/products'
+import { createPromotionOrder, getActivePromotions } from '../api/promotions'
 import { useAuthStore } from '../stores/auth'
 import type { Category, EntityId, Product } from '../types/product'
+import type { Promotion, PromotionProduct } from '../types/promotion'
 
 type ViewMode = 'compact' | 'comfortable' | 'large'
 type SortMode = '推荐' | '销量' | '价格'
@@ -219,7 +313,19 @@ const viewMode = ref<ViewMode>('comfortable')
 const inStockOnly = ref(false)
 const aiDialogVisible = ref(false)
 const question = ref('')
+const aiAnswer = ref('')
+const aiLoading = ref(false)
 const imageErrors = ref(new Set<EntityId>())
+const promotions = ref<Promotion[]>([])
+const promotionCheckoutVisible = ref(false)
+const promotionSubmitting = ref(false)
+const selectedPromotionProduct = ref<PromotionProduct | null>(null)
+const promotionForm = ref({
+  quantity: 1,
+  receiverName: authStore.user?.nickname || '',
+  receiverPhone: authStore.user?.phone || '',
+  receiverAddress: ''
+})
 
 const categories = ref<Array<Pick<Category, 'id' | 'name'>>>([
   { id: 0, name: '全部' },
@@ -407,6 +513,15 @@ const displayedProducts = computed(() => {
   })
 })
 
+const activePromotion = computed(() => promotions.value[0])
+const promotionQuantityMax = computed(() => {
+  if (!selectedPromotionProduct.value) return 1
+  return Math.max(1, Math.min(selectedPromotionProduct.value.limitPerUser, selectedPromotionProduct.value.remainingStock))
+})
+const promotionTotalAmount = computed(() => {
+  return Number(selectedPromotionProduct.value?.promotionPrice || 0) * Number(promotionForm.value.quantity || 0)
+})
+
 const aiPreview = computed(() => {
   if (question.value.trim()) {
     return '建议从冷银月相项链开始搭配，再加入午夜玫瑰蜡烛营造空间氛围。'
@@ -444,6 +559,63 @@ async function addToCart(product: StoreProduct) {
   ElMessage.success('已加入购物车')
 }
 
+function openPromotionCheckout(item: PromotionProduct) {
+  if (!authStore.isLoggedIn) {
+    ElMessage.warning('请先登录后参与抢购')
+    router.push({ path: '/login', query: { redirect: '/' } })
+    return
+  }
+  selectedPromotionProduct.value = item
+  promotionForm.value = {
+    quantity: 1,
+    receiverName: authStore.user?.nickname || '',
+    receiverPhone: authStore.user?.phone || '',
+    receiverAddress: ''
+  }
+  promotionCheckoutVisible.value = true
+}
+
+async function submitPromotionOrder() {
+  if (!activePromotion.value || !selectedPromotionProduct.value) return
+  if (!promotionForm.value.receiverName || !promotionForm.value.receiverPhone || !promotionForm.value.receiverAddress) {
+    ElMessage.warning('请完整填写收货信息')
+    return
+  }
+  promotionSubmitting.value = true
+  try {
+    const order = await createPromotionOrder(activePromotion.value.id, {
+      promotionProductId: selectedPromotionProduct.value.id,
+      quantity: promotionForm.value.quantity,
+      receiverName: promotionForm.value.receiverName,
+      receiverPhone: promotionForm.value.receiverPhone,
+      receiverAddress: promotionForm.value.receiverAddress
+    })
+    ElMessage.success('抢购订单已创建')
+    promotionCheckoutVisible.value = false
+    router.push(`/orders/${order.id}`)
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '抢购失败')
+  } finally {
+    promotionSubmitting.value = false
+  }
+}
+
+async function submitAiGuide() {
+  if (!question.value.trim()) {
+    ElMessage.warning('请输入你的购物需求')
+    return
+  }
+  aiLoading.value = true
+  try {
+    const result = await shoppingGuide(question.value.trim())
+    aiAnswer.value = result.content
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : 'AI 导购暂不可用')
+  } finally {
+    aiLoading.value = false
+  }
+}
+
 function switchCategory(categoryId: EntityId) {
   activeCategoryId.value = categoryId === 0 ? null : categoryId
 }
@@ -460,13 +632,23 @@ function productRating(product: StoreProduct) {
   return product.rating || '4.8'
 }
 
+function formatDateTime(value: string) {
+  return value ? value.replace('T', ' ').slice(0, 16) : ''
+}
+
+function formatMoney(value: number) {
+  return Number(value || 0).toFixed(2)
+}
+
 async function loadHomeData() {
   try {
-    const [categoryData, productPage] = await Promise.all([
+    const [categoryData, productPage, promotionData] = await Promise.all([
       getCategories(),
-      getProducts({ page: 1, size: 12 })
+      getProducts({ page: 1, size: 12 }),
+      getActivePromotions()
     ])
     categories.value = [{ id: 0, name: '全部' }, ...categoryData.map((category) => ({ id: category.id, name: category.name }))]
+    promotions.value = promotionData
     products.value = productPage.records.map((product, index) => ({
       ...product,
       badge: product.categoryName,

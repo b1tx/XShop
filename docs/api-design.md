@@ -122,11 +122,13 @@
 ## 6. 促销接口
 
 - `GET /api/promotions/active`
+- `GET /api/promotions/{id}`
 - `POST /api/promotions/{id}/orders`
 
 后台：
 
 - `GET /api/admin/promotions`
+- `GET /api/admin/promotions/{id}`
 - `POST /api/admin/promotions`
 - `PUT /api/admin/promotions/{id}`
 - `PUT /api/admin/promotions/{id}/status`
@@ -166,6 +168,17 @@
 }
 ```
 
+### AI 商品问答
+
+`POST /api/ai/product-qa`
+
+```json
+{
+  "productId": 3001,
+  "question": "这件商品适合什么场景？"
+}
+```
+
 ## 8. 看板接口
 
 `GET /api/admin/dashboard/overview`
@@ -182,4 +195,3 @@
   "topProducts": []
 }
 ```
-

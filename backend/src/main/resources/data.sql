@@ -46,3 +46,21 @@ ON DUPLICATE KEY UPDATE
     detail = VALUES(detail),
     status = VALUES(status);
 
+INSERT INTO promotion_activity (id, name, start_time, end_time, status) VALUES
+    (4001, '午夜限时抢购', '2026-06-01 00:00:00', '2026-12-31 23:59:59', 1)
+ON DUPLICATE KEY UPDATE
+    name = VALUES(name),
+    start_time = VALUES(start_time),
+    end_time = VALUES(end_time),
+    status = VALUES(status);
+
+INSERT INTO promotion_product (id, activity_id, product_id, promotion_price, promotion_stock, limit_per_user) VALUES
+    (4101, 4001, 3001, 699.00, 8, 1),
+    (4102, 4001, 3002, 299.00, 15, 2),
+    (4103, 4001, 3008, 149.00, 20, 2)
+ON DUPLICATE KEY UPDATE
+    activity_id = VALUES(activity_id),
+    product_id = VALUES(product_id),
+    promotion_price = VALUES(promotion_price),
+    promotion_stock = VALUES(promotion_stock),
+    limit_per_user = VALUES(limit_per_user);

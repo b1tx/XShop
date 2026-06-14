@@ -79,8 +79,29 @@
       </template>
     </section>
 
-    <el-dialog v-model="checkoutVisible" title="填写收货信息" width="520px">
-      <el-form :model="checkoutForm" label-width="90px">
+    <el-dialog
+      v-model="checkoutVisible"
+      class="gothic-dialog"
+      width="min(560px, calc(100vw - 32px))"
+      append-to-body
+    >
+      <template #header>
+        <div class="gothic-dialog__intro">
+          <p class="eyebrow">Checkout</p>
+          <h2>填写收货信息</h2>
+          <span>确认收货信息后，将为已选商品创建订单。</span>
+        </div>
+      </template>
+
+      <div class="gothic-dialog__summary gothic-dialog__summary--compact">
+        <div>
+          <strong>已选 {{ selectedItems.length }} 件商品</strong>
+          <span>{{ selectedItemsSummary }}</span>
+          <em>合计 ¥{{ formatMoney(totalAmount) }}</em>
+        </div>
+      </div>
+
+      <el-form class="gothic-form-grid" :model="checkoutForm" label-position="top">
         <el-form-item label="收货人">
           <el-input v-model="checkoutForm.receiverName" />
         </el-form-item>
@@ -126,6 +147,11 @@ const checkoutForm = reactive({
 
 const selectedItems = computed(() => items.value.filter((item) => selectedIds.value.includes(item.id)))
 const totalAmount = computed(() => selectedItems.value.reduce((sum, item) => sum + itemSubtotal(item), 0))
+const selectedItemsSummary = computed(() => {
+  if (!selectedItems.value.length) return '暂无选中商品'
+  const first = cartProductName(selectedItems.value[0])
+  return selectedItems.value.length > 1 ? `${first} 等 ${selectedItems.value.length} 件` : first
+})
 
 function formatMoney(value: number) {
   return Number(value || 0).toFixed(2)

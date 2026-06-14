@@ -10,7 +10,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         "com.example.aicommerce.cart.mapper",
         "com.example.aicommerce.order.mapper",
         "com.example.aicommerce.inventory.mapper",
-        "com.example.aicommerce.payment.mapper"
+        "com.example.aicommerce.payment.mapper",
+        "com.example.aicommerce.promotion.mapper",
+        "com.example.aicommerce.ai.mapper"
 })
 @SpringBootApplication
 public class AiCommerceApplication {

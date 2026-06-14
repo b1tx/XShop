@@ -40,6 +40,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers("/api/auth/login", "/api/auth/register").permitAll()
                 .antMatchers("/api/categories", "/api/products", "/api/products/*").permitAll()
+                .antMatchers("/api/promotions/active", "/api/promotions/*").permitAll()
                 .antMatchers("/api/admin/**").hasAnyRole("ADMIN", "OPERATOR")
                 .anyRequest().authenticated()
                 .and()
@@ -56,4 +57,3 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
         response.getWriter().write(objectMapper.writeValueAsString(ApiResponse.fail(code, message)));
     }
 }
-

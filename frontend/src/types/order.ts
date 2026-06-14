@@ -5,6 +5,7 @@ export type OrderStatus = 'CREATED' | 'PAID' | 'SHIPPED' | 'RECEIVED' | 'CANCELL
 export interface OrderItem {
   id: EntityId
   productId: EntityId
+  promotionProductId?: EntityId
   productName: string
   productImage: string
   price: number

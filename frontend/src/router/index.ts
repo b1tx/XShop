@@ -10,6 +10,8 @@ import CartView from '../views/CartView.vue'
 import OrderListView from '../views/OrderListView.vue'
 import OrderDetailView from '../views/OrderDetailView.vue'
 import AdminOrdersView from '../views/AdminOrdersView.vue'
+import AdminPromotionsView from '../views/AdminPromotionsView.vue'
+import AdminAiOperationView from '../views/AdminAiOperationView.vue'
 import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
@@ -74,6 +76,18 @@ const router = createRouter({
       path: '/admin/orders',
       name: 'admin-orders',
       component: AdminOrdersView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/admin/promotions',
+      name: 'admin-promotions',
+      component: AdminPromotionsView,
+      meta: { requiresAdmin: true }
+    },
+    {
+      path: '/admin/ai-operation',
+      name: 'admin-ai-operation',
+      component: AdminAiOperationView,
       meta: { requiresAdmin: true }
     },
     {
