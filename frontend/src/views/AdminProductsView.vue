@@ -95,8 +95,21 @@
         <el-form-item label="库存">
           <el-input-number v-model="productForm.stock" :min="0" />
         </el-form-item>
-        <el-form-item label="图片 URL">
-          <el-input v-model="productForm.mainImage" />
+        <el-form-item label="商品图片">
+          <div class="product-image-upload">
+            <el-upload
+              :auto-upload="false"
+              :show-file-list="false"
+              accept="image/jpeg,image/png,image/webp"
+              :on-change="handleImageSelected"
+            >
+              <el-button :loading="imageUploading">选择本地图片</el-button>
+            </el-upload>
+            <span>支持 jpg、png、webp，不超过 5MB</span>
+            <div v-if="productForm.mainImage" class="product-image-preview">
+              <img :src="productForm.mainImage" alt="商品图片预览" />
+            </div>
+          </div>
         </el-form-item>
         <el-form-item label="详情">
           <el-input v-model="productForm.detail" type="textarea" :rows="4" />
@@ -107,7 +120,7 @@
       </el-form>
       <template #footer>
         <el-button @click="productDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="saveProduct">保存</el-button>
+        <el-button type="primary" :disabled="imageUploading" @click="saveProduct">保存</el-button>
       </template>
     </el-dialog>
 
@@ -131,6 +144,7 @@
 <script setup lang="ts">
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import type { UploadFile } from 'element-plus'
 import {
   createAdminCategory,
   createAdminProduct,
@@ -140,6 +154,7 @@ import {
   updateAdminProduct,
   updateAdminProductStatus
 } from '../api/admin'
+import { uploadProductImage } from '../api/uploads'
 import type { Category, EntityId, Product, ProductPayload } from '../types/product'
 
 const products = ref<Product[]>([])
@@ -148,6 +163,7 @@ const total = ref(0)
 const productDialogVisible = ref(false)
 const categoryDialogVisible = ref(false)
 const editingProduct = ref<Product | null>(null)
+const imageUploading = ref(false)
 
 const query = reactive({
   page: 1,
@@ -215,6 +231,10 @@ function openEdit(product: Product) {
 }
 
 async function saveProduct() {
+  if (!productForm.mainImage) {
+    ElMessage.warning('请先上传商品图片')
+    return
+  }
   if (editingProduct.value) {
     await updateAdminProduct(editingProduct.value.id, productForm)
   } else {
@@ -223,6 +243,30 @@ async function saveProduct() {
   ElMessage.success('保存成功')
   productDialogVisible.value = false
   await loadProducts()
+}
+
+async function handleImageSelected(uploadFile: UploadFile) {
+  const rawFile = uploadFile.raw
+  if (!rawFile) return
+  if (!['image/jpeg', 'image/png', 'image/webp'].includes(rawFile.type)) {
+    ElMessage.warning('仅支持 jpg、png、webp 图片')
+    return
+  }
+  if (rawFile.size > 5 * 1024 * 1024) {
+    ElMessage.warning('图片大小不能超过 5MB')
+    return
+  }
+
+  imageUploading.value = true
+  try {
+    const result = await uploadProductImage(rawFile)
+    productForm.mainImage = result.url
+    ElMessage.success('图片上传成功')
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '图片上传失败')
+  } finally {
+    imageUploading.value = false
+  }
 }
 
 async function toggleStatus(product: Product) {

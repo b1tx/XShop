@@ -27,10 +27,10 @@
     <header class="gothic-header">
       <div class="store-container gothic-header__inner">
         <RouterLink class="gothic-brand" to="/">
-          <span class="gothic-brand__mark">N</span>
+          <span class="gothic-brand__mark">X</span>
           <span>
-            <strong>夜幕商店</strong>
-            <small>Nocturne Atelier</small>
+            <strong>XSHOP</strong>
+            <small>Gothic Atelier</small>
           </span>
         </RouterLink>
 
@@ -52,7 +52,7 @@
         </nav>
 
         <div class="gothic-actions">
-          <RouterLink to="/admin">后台</RouterLink>
+          <RouterLink v-if="authStore.isAdmin" to="/admin">后台</RouterLink>
           <button type="button" @click="goCart">
             <el-icon><ShoppingCart /></el-icon>
             购物车
@@ -89,9 +89,21 @@
             <h2>{{ activePromotion.name }}</h2>
             <small>精选暗夜单品限量放出，活动库存售完即止。</small>
           </div>
-          <span>截止 {{ formatDateTime(activePromotion.endTime) }}</span>
+          <div class="promotion-strip__meta">
+            <span>截止 {{ formatDateTime(activePromotion.endTime) }}</span>
+            <span>{{ activePromotion.products.length }} 件活动商品</span>
+          </div>
+          <button
+            class="promotion-toggle"
+            :class="{ active: promotionExpanded }"
+            type="button"
+            @click="promotionExpanded = !promotionExpanded"
+          >
+            {{ promotionExpanded ? '收起抢购' : '展开抢购' }}
+            <span aria-hidden="true">⌄</span>
+          </button>
         </div>
-        <div class="promotion-grid">
+        <div v-show="promotionExpanded" class="promotion-grid">
           <article v-for="item in activePromotion.products" :key="item.id" class="promotion-card">
             <RouterLink class="promotion-card__media" :to="`/products/${item.productId}`">
               <img :src="item.mainImage" :alt="item.productName" />
@@ -130,7 +142,6 @@
         <div class="toolbar-controls">
           <el-radio-group v-model="sortMode" size="small">
             <el-radio-button value="推荐">推荐</el-radio-button>
-            <el-radio-button value="销量">销量</el-radio-button>
             <el-radio-button value="价格">价格</el-radio-button>
           </el-radio-group>
 
@@ -171,7 +182,6 @@
             </RouterLink>
             <p>{{ product.subtitle }}</p>
             <div class="product-meta">
-              <span>已售 {{ productSales(product) }}</span>
               <span :class="{ warning: product.stock <= 10 }">库存 {{ product.stock }}</span>
             </div>
             <button type="button" :disabled="product.stock <= 0" @click="addToCart(product)">加入购物车</button>
@@ -216,8 +226,8 @@
         </div>
       </div>
       <template #footer>
-        <el-button @click="aiDialogVisible = false">关闭</el-button>
-        <el-button type="primary" :loading="aiLoading" @click="submitAiGuide">
+        <el-button class="ai-dialog-close" @click="aiDialogVisible = false">关闭</el-button>
+        <el-button class="ai-dialog-submit" type="primary" :loading="aiLoading" @click="submitAiGuide">
           <el-icon><MagicStick /></el-icon>
           生成建议
         </el-button>
@@ -287,7 +297,7 @@ import type { Category, EntityId, Product } from '../types/product'
 import type { Promotion, PromotionProduct } from '../types/promotion'
 
 type ViewMode = 'compact' | 'comfortable' | 'large'
-type SortMode = '推荐' | '销量' | '价格'
+type SortMode = '推荐' | '价格'
 
 interface HeroSlide {
   kicker: string
@@ -298,8 +308,6 @@ interface HeroSlide {
 
 interface StoreProduct extends Product {
   badge?: string
-  sales?: string
-  salesCount?: number
   rating?: string
   priority?: number
 }
@@ -319,6 +327,7 @@ const imageErrors = ref(new Set<EntityId>())
 const promotions = ref<Promotion[]>([])
 const promotionCheckoutVisible = ref(false)
 const promotionSubmitting = ref(false)
+const promotionExpanded = ref(false)
 const selectedPromotionProduct = ref<PromotionProduct | null>(null)
 const promotionForm = ref({
   quantity: 1,
@@ -337,7 +346,7 @@ const categories = ref<Array<Pick<Category, 'id' | 'name'>>>([
 
 const heroSlides: HeroSlide[] = [
   {
-    kicker: 'Nocturne Atelier',
+    kicker: 'XSHOP Atelier',
     title: '黑色仪式感，从日常开始',
     description: '斗篷、银饰与烛光器物组成克制而锋利的夜色衣橱。',
     image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?auto=format&fit=crop&w=1800&q=82'
@@ -366,8 +375,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 899,
     mainImage: 'https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=900&q=82',
     badge: '主推',
-    sales: '2800+',
-    salesCount: 2800,
     stock: 18,
     rating: '4.9',
     priority: 98,
@@ -383,8 +390,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 369,
     mainImage: 'https://images.unsplash.com/photo-1611591437281-460bfbe1220a?auto=format&fit=crop&w=900&q=82',
     badge: '银饰',
-    sales: '5100+',
-    salesCount: 5100,
     stock: 42,
     rating: '4.8',
     priority: 96,
@@ -400,8 +405,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 259,
     mainImage: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=900&q=82',
     badge: '低库存',
-    sales: '1900+',
-    salesCount: 1900,
     stock: 7,
     rating: '4.7',
     priority: 90,
@@ -417,8 +420,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 439,
     mainImage: 'https://images.unsplash.com/photo-1602874801007-bd458bb1b8b6?auto=format&fit=crop&w=900&q=82',
     badge: '暗金',
-    sales: '960+',
-    salesCount: 960,
     stock: 15,
     rating: '4.8',
     priority: 87,
@@ -434,8 +435,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 299,
     mainImage: 'https://images.unsplash.com/photo-1515562141207-7a88fb7ce338?auto=format&fit=crop&w=900&q=82',
     badge: '套组',
-    sales: '3200+',
-    salesCount: 3200,
     stock: 25,
     rating: '4.6',
     priority: 92,
@@ -451,8 +450,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 529,
     mainImage: 'https://images.unsplash.com/photo-1594633312681-425c7b97ccd1?auto=format&fit=crop&w=900&q=82',
     badge: '新品',
-    sales: '870+',
-    salesCount: 870,
     stock: 11,
     rating: '4.7',
     priority: 89,
@@ -468,8 +465,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 679,
     mainImage: 'https://images.unsplash.com/photo-1513506003901-1e6a229e2d15?auto=format&fit=crop&w=900&q=82',
     badge: '氛围',
-    sales: '1400+',
-    salesCount: 1400,
     stock: 9,
     rating: '4.8',
     priority: 91,
@@ -485,8 +480,6 @@ const fallbackProducts: StoreProduct[] = [
     price: 189,
     mainImage: 'https://images.unsplash.com/photo-1608571423902-eed4a5ad8108?auto=format&fit=crop&w=900&q=82',
     badge: '香氛',
-    sales: '4600+',
-    salesCount: 4600,
     stock: 33,
     rating: '4.9',
     priority: 95,
@@ -508,7 +501,6 @@ const displayedProducts = computed(() => {
 
   return [...result].sort((a, b) => {
     if (sortMode.value === '价格') return a.price - b.price
-    if (sortMode.value === '销量') return (b.salesCount || 0) - (a.salesCount || 0)
     return (b.priority || Number(b.id) || 0) - (a.priority || Number(a.id) || 0)
   })
 })
@@ -624,10 +616,6 @@ function productBadge(product: StoreProduct) {
   return product.badge || product.categoryName || '精选'
 }
 
-function productSales(product: StoreProduct) {
-  return product.sales || `${Math.max(80, Number(product.id) % 9000 || 0)}+`
-}
-
 function productRating(product: StoreProduct) {
   return product.rating || '4.8'
 }
@@ -652,8 +640,6 @@ async function loadHomeData() {
     products.value = productPage.records.map((product, index) => ({
       ...product,
       badge: product.categoryName,
-      sales: `${900 + index * 420}+`,
-      salesCount: 900 + index * 420,
       rating: '4.8',
       priority: 100 - index
     }))

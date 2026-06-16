@@ -5,7 +5,7 @@
         <RouterLink class="gothic-brand" to="/">
           <span class="gothic-brand__mark">N</span>
           <span>
-            <strong>夜幕商店</strong>
+            <strong>XSHOP</strong>
             <small>Order Detail</small>
           </span>
         </RouterLink>

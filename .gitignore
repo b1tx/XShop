@@ -15,10 +15,12 @@ frontend/tsconfig.tsbuildinfo
 # Logs and local config
 *.log
 *.tmp
+~$*
 .env
 .env.*
 !frontend/.env.example
 !backend/src/main/resources/application.yml
+backend/src/main/resources/application-dev.yml
 
 # OS files
 Thumbs.db

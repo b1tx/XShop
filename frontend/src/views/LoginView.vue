@@ -1,8 +1,8 @@
 <template>
   <main class="auth-shell">
     <section class="auth-panel">
-      <p class="eyebrow">Nocturne Atelier</p>
-      <h1>登录夜幕商店</h1>
+      <p class="eyebrow">XSHOP Atelier</p>
+      <h1>登录 XSHOP</h1>
       <el-form :model="form" label-position="top" @submit.prevent="handleLogin">
         <el-form-item label="用户名">
           <el-input v-model="form.username" placeholder="admin / operator / user" />

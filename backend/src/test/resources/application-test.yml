@@ -1,0 +1,35 @@
+spring:
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:ai_commerce_test;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    username: sa
+    password:
+  sql:
+    init:
+      mode: always
+      schema-locations: classpath:schema-h2.sql
+      data-locations: classpath:data-h2.sql
+  redis:
+    host: localhost
+    port: 6379
+    database: 15
+
+security:
+  jwt:
+    secret: test-ai-commerce-secret-key-change-me-2026
+    expire-hours: 24
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: assign_id
+
+aliyun:
+  oss:
+    endpoint:
+    bucket-name:
+    access-key-id:
+    access-key-secret:
+    public-base-url:
